@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Analysis {
+  id          String       @id @default(cuid())
+  url         String
+  status      String       @default("pending") // pending, crawling, analyzing, completed, failed
+  error       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  pages       Page[]
+  suggestions Suggestion[]
+}
+
+model Page {
+  id         String   @id @default(cuid())
+  analysisId String
+  url        String
+  title      String?
+  content    String   // Markdown content
+  html       String?  // Raw HTML for structured data analysis
+  createdAt  DateTime @default(now())
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
+
+model Suggestion {
+  id         String   @id @default(cuid())
+  analysisId String
+  category   String   // content_clarity, page_coverage, structured_data, consistency, structural_signals
+  issue      String
+  why        String
+  fix        String
+  severity   String   @default("medium") // low, medium, high
+  pageUrl    String?  // Related page URL if applicable
+  createdAt  DateTime @default(now())
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+}
