@@ -52,6 +52,8 @@ export default function AnalysisPage() {
   const [error, setError] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
   const [showPages, setShowPages] = useState(false)
+  const [severityFilter, setSeverityFilter] = useState<string>('all')
+  const [pageFilter, setPageFilter] = useState<string>('all')
 
   useEffect(() => {
     async function fetchAnalysis() {
@@ -123,9 +125,16 @@ export default function AnalysisPage() {
     )
   }
 
-  const filteredSuggestions = activeCategory === 'all'
-    ? analysis.suggestions
-    : analysis.suggestions.filter(s => s.category === activeCategory)
+  const severityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 }
+  
+  const filteredSuggestions = analysis.suggestions
+    .filter(s => activeCategory === 'all' || s.category === activeCategory)
+    .filter(s => severityFilter === 'all' || s.severity === severityFilter)
+    .filter(s => pageFilter === 'all' || s.pageUrl === pageFilter)
+    .sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity])
+
+  // Get unique page URLs from suggestions for the filter
+  const uniquePages = Array.from(new Set(analysis.suggestions.map(s => s.pageUrl).filter(Boolean))) as string[]
 
   const statusProgress = {
     pending: 0,
@@ -232,7 +241,14 @@ export default function AnalysisPage() {
                       <div key={page.id} className="flex items-center justify-between rounded-lg border p-3">
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-medium text-sm">{page.title || 'Untitled'}</p>
-                          <p className="truncate text-xs text-zinc-500">{page.url}</p>
+                          <a 
+                            href={page.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="truncate text-xs text-blue-500 hover:underline block"
+                          >
+                            {page.url}
+                          </a>
                         </div>
                         <Badge variant="outline" className="ml-2 shrink-0">
                           {analysis.suggestions.filter(s => s.pageUrl === page.url).length} issues
@@ -259,6 +275,59 @@ export default function AnalysisPage() {
                 ))}
               </TabsList>
 
+              {/* Filters */}
+              <div className="mt-4 flex flex-wrap gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-zinc-500">Severity:</label>
+                  <select
+                    value={severityFilter}
+                    onChange={(e) => setSeverityFilter(e.target.value)}
+                    className="rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                  >
+                    <option value="all">All</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-zinc-500">Page:</label>
+                  <select
+                    value={pageFilter}
+                    onChange={(e) => setPageFilter(e.target.value)}
+                    className="max-w-[200px] truncate rounded-md border border-zinc-200 bg-white px-2 py-1 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+                  >
+                    <option value="all">All Pages</option>
+                    {uniquePages.map(url => {
+                      let displayPath = url
+                      try {
+                        displayPath = new URL(url).pathname || '/'
+                      } catch {
+                        // Keep full URL if parsing fails
+                      }
+                      return (
+                        <option key={url} value={url}>
+                          {displayPath}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+                {(severityFilter !== 'all' || pageFilter !== 'all') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSeverityFilter('all')
+                      setPageFilter('all')
+                    }}
+                    className="text-xs"
+                  >
+                    Clear filters
+                  </Button>
+                )}
+              </div>
+
               <TabsContent value={activeCategory} className="mt-4 space-y-4">
                 {filteredSuggestions.length === 0 ? (
                   <Card>
@@ -274,7 +343,14 @@ export default function AnalysisPage() {
                           <div className="space-y-1">
                             <CardTitle className="text-base">{suggestion.issue}</CardTitle>
                             {suggestion.pageUrl && (
-                              <p className="text-xs text-zinc-500">{suggestion.pageUrl}</p>
+                              <a 
+                                href={suggestion.pageUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-500 hover:underline"
+                              >
+                                {suggestion.pageUrl}
+                              </a>
                             )}
                           </div>
                           <Badge className={SEVERITY_COLORS[suggestion.severity]}>
