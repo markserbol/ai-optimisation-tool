@@ -36,10 +36,11 @@ ENV/
 # Reports
 ai_visibility_report_*.json
 
-# Test files
-test_hotel_good.html
-test_hotel_bad.html
-test_analyzer.py
+# Demo and test files (keep in repo for demonstration)
+# test_hotel_good.html
+# test_hotel_bad.html
+# test_analyzer.py
+# demo.py
 
 # OS
 .DS_Store

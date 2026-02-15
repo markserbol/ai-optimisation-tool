@@ -46,6 +46,16 @@ The tool will:
 2. Display a detailed report in the terminal
 3. Save a JSON report file for further analysis
 
+### Try the Demo
+
+Want to see the tool in action before analyzing your own website? Run the included demo:
+
+```bash
+python demo.py
+```
+
+This will analyze two sample hotel websites (included in the repository) and show you the difference between a well-optimized and poorly-optimized site.
+
 ### Example Output
 
 ```
