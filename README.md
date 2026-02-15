@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Visibility Optimisation
 
-## Getting Started
+A prototype system that analyses hotel websites and generates actionable suggestions to improve AI visibility, recommendation likelihood, and factual accuracy for AI engines (ChatGPT, Perplexity, Gemini).
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Tech Stack
+
+| Layer | Technology | Purpose |
+|-------|------------|---------|
+| Framework | Next.js 14 (App Router) | Full-stack TypeScript, API routes + UI |
+| Styling | Tailwind CSS + shadcn/ui | Fast, attractive components |
+| Database | SQLite + Prisma | Simple, file-based, no setup |
+| Crawling | Firecrawl API | JS rendering, clean markdown extraction |
+| AI/LLM | OpenAI GPT-4o | Content analysis & suggestion generation |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend                              │
+│  - URL input form                                           │
+│  - Analysis progress view                                   │
+│  - Suggestions dashboard (categorized)                      │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                    API Routes                                │
+│  /api/analyze - Start analysis job                          │
+│  /api/suggestions/:id - Get results                         │
+│  /api/status/:id - Check progress                           │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                  Analysis Pipeline                           │
+│  1. Crawl site (Firecrawl)                                  │
+│  2. Extract & store pages                                   │
+│  3. Run AI analysis per category:                           │
+│     - Content clarity                                       │
+│     - Page coverage gaps                                    │
+│     - Structured data audit                                 │
+│     - Internal consistency                                  │
+│     - Structural signals                                    │
+│  4. Aggregate & dedupe suggestions                          │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                    Database (SQLite)                         │
+│  - analyses (id, url, status, created_at)                   │
+│  - pages (id, analysis_id, url, title, content, html)       │
+│  - suggestions (id, analysis_id, category, issue, ...)      │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Folder Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+/app
+  /page.tsx                    # URL input form
+  /analysis/[id]/page.tsx      # Results dashboard
+  /api
+    /analyze/route.ts          # Start crawl + analysis
+    /status/[id]/route.ts      # Check job progress
+/lib
+  /crawl.ts                    # Firecrawl integration
+  /analyze.ts                  # LLM analysis logic
+  /prompts.ts                  # Category-specific prompts
+  /db.ts                       # Prisma client
+/prisma
+  /schema.prisma               # Database schema
+/components
+  /ui/                         # shadcn components
+  /suggestion-card.tsx
+  /category-tabs.tsx
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## API Endpoints
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+ * `/api/analyze` POST
+  Validates the URL
+Creates an analysis record
+Starts crawling in the background
+Stores crawled pages in the database
+Updates status through: crawling → analyzing → completed
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+* `/api/analysis/[id]` GET
+  endpoint that returns the analysis with pages and suggestions
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## License
+
+Private - Visaible Pilot Project

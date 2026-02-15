@@ -1,0 +1,160 @@
+Visaible Engineering Pilot Project
+Automated AI Visibility Optimisation Suggestions
+Engagement type: Paid pilot project
+Audience: Software / AI Engineer
+Delivery: Working prototype
+Demo: Local demo to Sam (screen share or local run)
+Deployment: Not required
+Objective
+Build a prototype system that:
+● Analyses a hotel’s website (ideally all public pages)
+● Identifies issues that reduce AI visibility, recommendation likelihood, or factual
+accuracy
+● Produces clear, actionable optimisation suggestions to improve the hotel
+website so that AI engines (ChatGPT, Perplexity, Gemini) more accurately
+understand, surface, and recommend the property
+This is not a traditional SEO audit.
+The focus is on how AI systems read, summarise, and reason about hotel websites.
+Context
+Visaible helps hotels understand and improve how they appear in AI-generated answers.
+AI engines are increasingly the discovery and recommendation layer for hotels.
+They rely on:
+● Content clarity and structure
+● Consistency of facts across pages
+● Structured data and machine-readable signals
+● How information is organised for extraction and reasoning
+This pilot tests your ability to translate these concepts into working software.
+Instructions and Assumptions
+The instructions in this brief are intentionally high-level and partially vague.
+This is deliberate.
+Part of the evaluation is to assess:
+● The assumptions you make
+● How you scope an ambiguous problem
+● How you balance completeness versus practicality
+If something is unclear:
+● Make a reasonable assumption
+● State it explicitly
+● Proceed
+Do not wait for perfect requirements.
+Input
+The system should accept:
+● A hotel website URL
+The system should:
+● Crawl and analyse multiple pages (e.g. homepage, rooms, amenities, offers, blog)
+● Work on publicly accessible pages only
+You may assume:
+● English-language content
+● No authentication
+● No need to perfectly handle JavaScript-heavy rendering
+Output
+The system should output a structured list of optimisation suggestions.
+Each suggestion must clearly explain:
+● What the issue is
+● Why it matters for AI engines
+● What should be changed
+Example (illustrative only):
+Issue: Swimming Pool amenity unclear across pages - one page mentions there
+is a pool, another page mentions there is only a Spa
+Why it matters: AI models frequently hallucinate amenities when signals conflict
+Suggested fix: Add an explicit amenities section with yes/no attributes and
+reinforce via structured data
+Suggestions must be specific and actionable, not generic.
+Required Suggestion Categories
+Your system should aim to generate suggestions across at least the following
+areas. 1. Content Clarity and Structure
+● Ambiguous or missing hotel facts
+● Marketing copy without factual anchors
+● Pages that mix multiple intents
+● Lack of concise, answer-friendly sections
+2. Page Coverage and Gaps
+● Important hotel topics not clearly covered (e.g. details on types of hotel rooms
+available)
+● Pages that should exist but do not
+● Over-reliance on vague experiential language
+3. Structured Data and Machine Readability
+● Missing or incomplete schema opportunities
+● Hotel attributes that should be explicit for AI
+● Conflicts between visible content and structured data
+4. Internal Consistency
+● Conflicting facts across pages
+● Inconsistent naming of rooms or amenities
+● Location ambiguity (districts, landmarks, proximity)
+5. Structural Signals That Reduce AI Clarity
+● Important facts buried deep in pages
+● Poorly labelled sections
+● Dense text blocks that obscure key information
+This is not a UI or design critique.
+It is about extractability and clarity for AI systems.
+Background: What Makes a Website Optimised for AI
+For this project, an AI-optimised hotel website is one that allows AI systems to easily
+extract, reconcile, and trust factual information about the property.
+AI engines do not interpret visual design or brand tone like humans. They perform best when
+information is explicit, structured, consistent, and easy to extract.
+Websites that perform well in AI answers typically:
+● State important facts explicitly
+● Separate experiential language from factual information
+● Use clear sections aligned to common user questions
+● Reinforce the same facts consistently across pages
+● Present key details in lists, tables, summaries, or structured data
+The goal is extractability, not aesthetics.
+For this project:
+● You do not need to assess visual design quality
+● You should flag structural or content patterns that:
+○ Obscure key facts
+○ Create ambiguity
+○ Increase the likelihood of AI misinterpretation
+Independent Research
+We have provided high-level guidance above in the Background: What Makes a Website
+Optimised for AI section.
+In addition to this, you are encouraged to do your own research on what makes a website
+perform well in AI-generated answers.
+This may include (but is not limited to):
+● How LLMs extract and summarise web content
+● How retrieval-augmented systems select and weight sources
+● Patterns that reduce hallucinations or increase confidence
+● Public guidance, experiments, or case studies related to AI search and AI answers
+We are interested in how you apply your understanding, not whether you follow a
+prescribed framework.
+AI-Powered Suggestions (Requirement)
+The optimisation suggestions produced by the system must be AI-powered.
+You may:
+● Use one or more LLMs to analyse page content
+● Combine AI reasoning with lightweight rules or checks
+● Use AI to summarise, compare, and reason across pages
+We are not evaluating prompt sophistication.
+We are evaluating whether AI is used appropriately and efficiently to generate useful
+optimisation suggestions.
+Technical Expectations
+You may choose:
+● Any language or framework (Typescript is preferred with a simple database)
+● Any crawling or parsing approach
+● Any AI models
+The prototype should demonstrate:
+● Multi-page analysis
+● Non-generic, reasoned suggestions
+● An attractive front-end is required to easily step through the application
+You do not need to:
+● Deploy to production
+● Handle scale or edge cases
+Code quality matters less than clarity of thinking and output usefulness.
+Helpful Tools and APIs (Optional)
+You may use any tools you find appropriate.
+The following API may be helpful:
+● Firecrawl – for crawling and extracting content across all pages of a website
+Use is optional and not required.
+Demo Requirements
+When ready, you will:
+● Demo the system to Sam
+● Walk through:
+○ Inputting a hotel URL
+○ Pages analysed
+○ Suggestions generated
+○ How suggestions map to AI visibility improvements
+A screen share or local run is sufficient.
+What We Are Evaluating
+We will evaluate:
+● How you reason about AI interpretation of websites ●
+The quality and specificity of optimisation suggestions ●
+System design decisions
+● Practical usefulness for real hotels
+● How you handle ambiguity
