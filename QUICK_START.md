@@ -24,16 +24,17 @@ This installs all required packages (Next.js, Prisma, OpenAI, Groq, Firecrawl, e
 
 ## Step 2: Set Up Environment Variables
 
-Create a `.env` file in the root directory with your API keys:
+Copy the example file and add your API keys:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` with your API keys:
 
 ```env
-# Database (SQLite - no setup needed)
 DATABASE_URL="file:./dev.db"
-
-# Required: Web Crawling
 FIRECRAWL_API_KEY=fc-...
-
-# Required: AI Providers (at least one)
 OPENAI_API_KEY=sk-proj-...
 GROQ_API_KEY=gsk_...
 ```
