@@ -1,4 +1,5 @@
-import { getClient } from './openai'
+import { getOpenAIWithFallback, getGroqClient_exported } from './openai'
+import OpenAI from 'openai'
 
 interface Page {
   url: string
@@ -143,6 +144,19 @@ ${page.content.length > maxCharsPerPage ? '\n[Content truncated...]' : ''}
       const suggestions = await analyzeCategory(categoryId, category, contentSummary)
       allSuggestions.push(...suggestions)
     } catch (error) {
+      // Re-throw critical errors (rate limit, auth, quota) to mark analysis as failed
+      if (error instanceof Error) {
+        if (error.message.includes('rate_limit') || error.message.includes('providers rate limited')) {
+          throw error
+        }
+        if (error.message.includes('API key') || error.message.includes('invalid')) {
+          throw error
+        }
+        if (error.message.includes('quota') || error.message.includes('billing')) {
+          throw error
+        }
+      }
+      // Log non-critical errors but continue
       console.error(`Error analyzing category ${categoryId}:`, error)
     }
   }
@@ -155,14 +169,71 @@ async function analyzeCategory(
   category: (typeof CATEGORIES)[keyof typeof CATEGORIES],
   contentSummary: string
 ): Promise<Suggestion[]> {
-  const { client, model } = getClient()
-  
-  const response = await client.chat.completions.create({
-    model,
-    messages: [
-      {
-        role: 'system',
-        content: `You are an AI visibility optimization expert. Your job is to analyze website content and identify issues that make it harder for AI systems (like ChatGPT, Claude, Perplexity, Google AI) to understand and accurately represent the content.
+  // Try OpenAI first, fall back to Groq on rate limit/quota/auth errors
+  let lastError: any = null
+
+  // Try primary provider (OpenAI)
+  try {
+    const { client, model } = getOpenAIWithFallback()
+    return await callLLM(client, model, category, contentSummary, categoryId)
+  } catch (error: any) {
+    // Check if this is a fallback-eligible error
+    const isFallbackError =
+      error?.status === 429 || // Rate limit
+      error?.code === 'rate_limit_exceeded' ||
+      error?.status === 401 || // Auth
+      error?.code === 'invalid_request_error' ||
+      error?.message?.includes('quota') ||
+      error?.message?.includes('rate_limit') ||
+      error?.message?.includes('401') ||
+      error?.message?.includes('429')
+
+    lastError = error
+
+    if (isFallbackError && process.env.GROQ_API_KEY) {
+      console.log(`[${categoryId}] OpenAI failed, trying Groq fallback...`)
+      try {
+        const { client, model } = getGroqClient_exported()
+        const result = await callLLM(client, model, category, contentSummary, categoryId)
+        console.log(`[${categoryId}] Groq fallback succeeded`)
+        return result
+      } catch (groqError) {
+        console.error(`[${categoryId}] Groq fallback also failed:`, groqError)
+        lastError = groqError
+      }
+    }
+  }
+
+  // If we get here, both providers failed or Groq not available
+  if (lastError instanceof Error) {
+    if (lastError.message.includes('rate_limit') || lastError.message.includes('429')) {
+      throw new Error(`All providers rate limited while analyzing ${categoryId}. Please try again later.`)
+    }
+    if (lastError.message.includes('invalid') || lastError.message.includes('401')) {
+      throw new Error(`API key invalid or expired for all providers.`)
+    }
+    if (lastError.message.includes('quota')) {
+      throw new Error(`Quota exceeded on all providers. Please check account billing.`)
+    }
+  }
+
+  throw lastError || new Error(`Failed to analyze ${categoryId}`)
+}
+
+async function callLLM(
+  client: OpenAI,
+  model: string,
+  category: (typeof CATEGORIES)[keyof typeof CATEGORIES],
+  contentSummary: string,
+  categoryId: string
+): Promise<Suggestion[]> {
+  try {
+    const response = await client.chat.completions.create({
+      model,
+      messages: [
+        {
+          role: 'system',
+          content: `You are an AI visibility optimization expert. Your job is to analyze website content and identify issues that make it harder for AI systems (like ChatGPT, Claude, Perplexity, Google AI) to understand and accurately represent the content.
 
 Respond with a JSON array of suggestions. Each suggestion must have:
 - issue (string): Brief description of the problem
@@ -173,42 +244,46 @@ Respond with a JSON array of suggestions. Each suggestion must have:
 
 Return an empty array [] if no issues found in this category.
 Only return valid JSON, no other text.`,
-      },
-      {
-        role: 'user',
-        content: `${category.prompt}
+        },
+        {
+          role: 'user',
+          content: `${category.prompt}
 
 WEBSITE CONTENT:
 ${contentSummary}`,
-      },
-    ],
-    temperature: 0.3,
-    max_tokens: 4000,
-  })
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 4000,
+    })
 
-  const content = response.choices[0]?.message?.content || '[]'
-  
-  try {
-    // Extract JSON from response (handle markdown code blocks)
-    const jsonMatch = content.match(/\[[\s\S]*\]/)
-    const suggestions = JSON.parse(jsonMatch?.[0] || '[]') as Array<{
-      issue: string
-      why: string
-      fix: string
-      severity: string
-      pageUrl?: string | null
-    }>
+    const content = response.choices[0]?.message?.content || '[]'
 
-    return suggestions.map((s) => ({
-      category: categoryId,
-      issue: s.issue,
-      why: s.why,
-      fix: s.fix,
-      severity: (s.severity as 'low' | 'medium' | 'high') || 'medium',
-      pageUrl: s.pageUrl || undefined,
-    }))
-  } catch (error) {
-    console.error(`Failed to parse suggestions for ${categoryId}:`, content)
-    return []
+    try {
+      // Extract JSON from response (handle markdown code blocks)
+      const jsonMatch = content.match(/\[[\s\S]*\]/)
+      const suggestions = JSON.parse(jsonMatch?.[0] || '[]') as Array<{
+        issue: string
+        why: string
+        fix: string
+        severity: string
+        pageUrl?: string | null
+      }>
+
+      return suggestions.map((s) => ({
+        category: categoryId,
+        issue: s.issue,
+        why: s.why,
+        fix: s.fix,
+        severity: (s.severity as 'low' | 'medium' | 'high') || 'medium',
+        pageUrl: s.pageUrl || undefined,
+      }))
+    } catch (error) {
+      console.error(`Failed to parse suggestions for ${categoryId}:`, content)
+      return []
+    }
+  } catch (error: any) {
+    // Pass through with provider info
+    throw error
   }
 }

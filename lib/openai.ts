@@ -45,3 +45,12 @@ export function getClient(): { client: OpenAI; model: string } {
   }
   throw new Error('No AI provider configured. Set OPENAI_API_KEY or GROQ_API_KEY.')
 }
+
+// Export individual clients for fallback logic
+export function getOpenAIWithFallback() {
+  return { client: getOpenAIClient(), model: OPENAI_MODEL }
+}
+
+export function getGroqClient_exported() {
+  return { client: getGroqClient(), model: GROQ_MODEL }
+}
