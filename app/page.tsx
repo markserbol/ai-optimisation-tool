@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { sanitizeAndValidateUrl } from '@/lib/utils'
 
 export default function Home() {
   const [url, setUrl] = useState('')
@@ -18,11 +19,20 @@ export default function Home() {
     setError('')
     setLoading(true)
 
+    // Sanitize and validate URL
+    const { url: validUrl, error: validationError } = sanitizeAndValidateUrl(url)
+
+    if (validationError) {
+      setError(validationError)
+      setLoading(false)
+      return
+    }
+
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: validUrl }),
       })
 
       const data = await res.json()
@@ -52,12 +62,12 @@ export default function Home() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Input
-                type="url"
-                placeholder="https://example.com"
+                type="text"
+                placeholder="example.com or https://example.com"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
-                required
                 disabled={loading}
+                className="font-mono"
               />
               {error && (
                 <p className="text-sm text-red-500">{error}</p>

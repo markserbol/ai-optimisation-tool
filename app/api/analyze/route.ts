@@ -2,32 +2,29 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { crawlWebsite } from '@/lib/crawl'
 import { analyzeContent } from '@/lib/analyze'
+import { sanitizeAndValidateUrl } from '@/lib/utils'
 
 export async function POST(request: NextRequest) {
   try {
     const { url } = await request.json()
 
-    if (!url) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 })
-    }
+    // Sanitize and validate URL
+    const { url: validUrl, error } = sanitizeAndValidateUrl(url)
 
-    // Validate URL
-    try {
-      new URL(url)
-    } catch {
-      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 })
+    if (error) {
+      return NextResponse.json({ error }, { status: 400 })
     }
 
     // Create analysis record
     const analysis = await prisma.analysis.create({
       data: {
-        url,
+        url: validUrl!,
         status: 'crawling',
       },
     })
 
     // Start crawling in background (don't await)
-    crawlAndAnalyze(analysis.id, url).catch(console.error)
+    crawlAndAnalyze(analysis.id, validUrl!).catch(console.error)
 
     return NextResponse.json({ id: analysis.id })
   } catch (error) {
